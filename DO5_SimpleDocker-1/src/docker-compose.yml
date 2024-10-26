@@ -1,0 +1,25 @@
+version: '3.5'
+services:
+    mini-proxy:
+      container_name: mini-proxy
+      build: ./proxy/.
+      volumes:
+        - './proxy/nginx:/etc/nginx'
+      restart: unless-stopped
+      ports:
+        - '80:8080'
+      depends_on:
+        - mini-server
+      networks:
+        - localnet
+    mini-server:
+      container_name: mini-server
+      build: .
+      volumes: 
+        - './server/nginx:/etc/nginx'
+      restart: unless-stopped
+      networks:
+        - localnet
+networks:
+  localnet:
+    driver: bridge

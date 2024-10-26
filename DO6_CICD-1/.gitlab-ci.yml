@@ -1,0 +1,52 @@
+stages:
+  - build
+  - test_int
+  - deploy
+job1:
+  stage: build
+  script:
+    - echo "Start build"
+    - cd src/cat
+    - make s21_cat
+    - cd ../grep
+    - make s21_grep
+  artifacts:
+    paths:
+      - src/cat
+      - src/grep
+    expire_in: 30 days
+  after_script:
+    - bash src/telegram.sh CI
+job2:
+  stage: build
+  script:
+    - clang-format --style=Google -Werror -n $(find . -name '*.c' -o -name '*.h')
+  after_script:
+    - bash src/telegram.sh CI
+job3:
+  stage: test_int
+  script:
+    - cd src/cat
+    - bash t_cat.sh
+    - if [ $? -eq 0 ]; then
+        echo "Integration tests passed successfully.";
+      else 
+        echo "Integration tests failed.";
+      fi
+    - cd ../grep
+    - bash t_grep.sh
+    - if [ $? -eq 0 ]; then
+        echo "Integration tests passed successfully.";
+      else 
+        echo "Integration tests failed.";
+      fi
+  after_script:
+    - bash src/telegram.sh CD
+  needs: ["job1", "job2"]
+job4:
+  stage: deploy
+  script: 
+    - bash src/deploy.sh
+  after_script:
+    - bash src/telegram.sh CD
+  when: manual
